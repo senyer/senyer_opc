@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 
 @SpringBootApplication
 @EnableScheduling
-@MapperScan("com.senyer.opc_client.persistence")
+@MapperScan("com.senyer.senyer_opc.persistence")
 public class OpcClientApplication implements ApplicationRunner  {
 
   public static void main(String[] args) {

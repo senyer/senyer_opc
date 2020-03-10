@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.senyer</groupId>
-    <artifactId>opc_client</artifactId>
+    <artifactId>senyer_opc</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>opc_client</name>
+    <name>senyer_opc</name>
     <description>OPCClient</description>
 
     <properties>
