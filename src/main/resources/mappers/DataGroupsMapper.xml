@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.senyer.senyer_opc.persistence.mapper.DataGroupsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.senyer.senyer_opc.persistence.domain.DataGroups">
+        <id column="id" property="id" />
+        <result column="table_name" property="tableName" />
+        <result column="api_type" property="apiType" />
+        <result column="data_style" property="dataStyle" />
+        <result column="url" property="url" />
+        <result column="descriptions" property="descriptions" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, table_name, api_type, data_style, url, descriptions
+    </sql>
+
+</mapper>

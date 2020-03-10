@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.senyer.senyer_opc.persistence.mapper.DefaultTagsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.senyer.senyer_opc.persistence.domain.DefaultTags">
+        <id column="id" property="id" />
+        <result column="seq_id" property="seqId" />
+        <result column="item_id" property="itemId" />
+        <result column="alies" property="alies" />
+        <result column="accuracy" property="accuracy" />
+        <result column="unit" property="unit" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, seq_id, item_id, alies, accuracy, unit
+    </sql>
+
+</mapper>
