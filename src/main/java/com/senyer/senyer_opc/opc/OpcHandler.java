@@ -114,7 +114,8 @@ public class OpcHandler {
     Map<Tags, Item> itemMap = new HashMap<>();
     tags.forEach((tag) -> {
       try {
-          itemMap.put(tag, group.addItem(tag.getItemId()));
+
+        itemMap.put(tag, group.addItem(tag.getItemId()));
       } catch (JIException | AddFailedException e) {
         log.error(">>>>>>>>>>>>>>>>>> Tags Put To OPC Group failed! {1}", e);
       }

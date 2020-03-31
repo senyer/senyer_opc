@@ -199,6 +199,11 @@ public class OpcAsyncHandler {
     }
     for (Map.Entry<Tags, ItemState> entry : itemMap.entrySet()) {
       try {
+      log.info(">>>>>>>>RawData>>entry.toString()>>>>>>>> {}", entry.toString());
+      log.info(">>>>>>>>RawData>>entry.getKey()>>>>>>>> {}", entry.getKey());
+      log.info(">>>>>>>>RawData>>entry.getValue()>>>>>>>> {}", entry.getValue());
+      log.info(">>>>>>>>RawData>>entry.getValue().getValue().getObject()>>>>>>>> {}", entry.getValue().getValue().getObject());
+
         Data_C dataC = new Data_C();
         dataC.setValue(entry.getValue().getValue().getObject());
         dataC.setName(entry.getKey().getAlies());
