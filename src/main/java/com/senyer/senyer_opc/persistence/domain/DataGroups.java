@@ -34,6 +34,7 @@ public class DataGroups extends Model<DataGroups> {
 
     private String dataStyle;//A：变量+数据、B：变量+数据+单位、C：变量+数据+时间+单位、D：变量+数据+时间。。。。。。
 
+
     /*
         <>Format-WebService<> : 4	default_tags	webservice	C	http://127.0.0.1:8082/services/realtime?wsdl,web:realtime,http://webservice.zy.com/,data	推送默认变量集的webservice
         <>Format-Http<> ： 5	default_tags	http	C	http://127.0.0.1:8080/demo/temp,post,data	推送默认变量集的http接口
@@ -42,7 +43,7 @@ public class DataGroups extends Model<DataGroups> {
 
     private String descriptions;//接口的描述信息
 
-
+    private String source;//数据源头 already表示 已经取到了数据。
     @Override
     protected Serializable pkVal() {
         return this.id;

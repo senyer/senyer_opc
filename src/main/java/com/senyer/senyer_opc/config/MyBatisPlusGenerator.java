@@ -59,18 +59,18 @@ public class MyBatisPlusGenerator {
                 //strategy.setSuperEntityClass("com.baomidou.ant.common.BaseEntity");
                 // 写于父类中的公共字段,可以是多个
                 //strategy.setSuperEntityColumns("id");
-                strategy.setInclude(new String[] {"data_groups","default_tags","opc_properties"});// 需要生成的表
+                strategy.setInclude(new String[] {"opc_properties_group"});// 需要生成的表
                 //strategy.setExclude(new String[] {"sys_version_update"});// 排除生成的表
                 //strategy.setTablePrefix(new String[]{"sys_"});//此处提供多个表的前缀去除  也可以动态获取pc.getModuleName() + "_"
                 mpg.setStrategy(strategy);
                 // 包配置
                 PackageConfig pc = new PackageConfig();
                 pc.setParent("");//父包名。如果为空，将下面子包名必须写全部， 否则就只需写子包名,建议写空，这样，可以让xml文件写入到templates下面，更为规范。
-                pc.setController("com.senyer.opc_client.api.restful");
-                pc.setService("com.senyer.opc_client.service");
-                pc.setServiceImpl("com.senyer.opc_client.service");
-                pc.setMapper("com.senyer.opc_client.persistence.mapper");
-                pc.setEntity("com.senyer.opc_client.persistence.domain");
+                pc.setController("com.senyer.senyer_opc.api.restful");
+                pc.setService("com.senyer.senyer_opc.service");
+                pc.setServiceImpl("com.senyer.senyer_opc.service");
+                pc.setMapper("com.senyer.senyer_opc.persistence.mapper");
+                pc.setEntity("com.senyer.senyer_opc.persistence.domain");
                 pc.setXml("mappers");
                 mpg.setPackageInfo(pc);
 
