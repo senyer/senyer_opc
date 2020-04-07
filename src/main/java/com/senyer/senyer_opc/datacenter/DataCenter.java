@@ -119,20 +119,22 @@ public class DataCenter {
       try {
         access.addItem(tag.getItemId(), (item, state) -> {
             if (item != null) {
-              writeToMemory(tag, state, opcProp);
-              writeToInfluxDB(tag, state);
+              //TODO 这些操作后续可以考虑异步化处理
+              writeToMemory(tag, state, opcProp);     //To Memory
+              writeToInfluxDB(tag, state);            //To InfluxDB
+              writeToDB(tag, state);                  //To DB
             }
           }
         );
       } catch (JIException | AddFailedException e) {
-        log.error(">>>>>>>>>>>>>>>>>> tagsPutToAccessToGlobal failed! {1}", e);
+        log.error(">>>>>>>>>>>>>>>>>> accessReadOneserver failed! {1}", e);
       }
     }));
   }
 
 
   /**
-   *  想一下，是否可以直接put进map。可以覆盖之前的数据
+   *  TODO （senyer） 这里需要考虑一下，是否会造成内存溢出！！！！！
    * @param tag 变量名
    * @param state 读取的数据对象。
    */
@@ -147,16 +149,25 @@ public class DataCenter {
     //TODO (senyer) improve this.  想一个更高效合理的方案。
     //memoryData.remove(opcProp);//校验一下，这一步是不是可以删掉、
     memoryData.put(opcProp, itemMap);
+    /*
     log.error(">>>>>>>>>>>>>>>>>> 遍历：：：");
     log.error(">>>>>>>>>>>>>>>>>> 遍历XXXXXXX：：："+memoryData.size());
     memoryData.forEach((k,v)->{
       log.error("kkkkkkkkkkkkkkkkk:      "+k);
       log.error("vvvvvvvvvvvvv::::::"+v);
-    });
+    });*/
   }
 
   private void writeToInfluxDB(Tags tag, ItemState state) {
     //TODO (senyer) : 写入到influxDB
   }
 
+  /**
+   * Write To DB
+   * @param tag
+   * @param state
+   */
+  private void writeToDB(Tags tag, ItemState state) {
+    //TODO (senyer) : 写入到关系型数据库 saveOrUpdate
+  }
 }
