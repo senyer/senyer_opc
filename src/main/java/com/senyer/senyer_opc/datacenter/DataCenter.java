@@ -14,6 +14,9 @@ import org.jinterop.dcom.common.JIException;
 import org.openscada.opc.lib.common.ConnectionInformation;
 import org.openscada.opc.lib.common.NotConnectedException;
 import org.openscada.opc.lib.da.*;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
@@ -42,13 +45,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @Slf4j
-public class DataCenter {
+public class DataCenter implements InitializingBean {
 
-    private static final String URL = "http://127.0.0.1:8086";
-    private static final String USER = "admin";
-    private static final String PASSWORD = "admin";
-    private static String DATABASE = "Opc_RealTimeDB";
+
+
+
+
     private static AtomicBoolean HASDB = new AtomicBoolean(false);
+
     private InfluxDB influxDB;
 
     public static final ConcurrentHashMap<OpcPropertiesGroup, ConcurrentHashMap<Tags, ItemState>> memoryData = new ConcurrentHashMap<>();//存储全局变量至内存
@@ -57,6 +61,8 @@ public class DataCenter {
 
     private static final Integer INTERVAL_TIME = 8000;//循环读取的间隔时间。
 
+    @Autowired
+    private InfluxDBProperties influxDBProperties;
     @Resource
     private OpcPropertiesGroupService opcPropertiesGroupService;
     @Resource
@@ -65,17 +71,17 @@ public class DataCenter {
     private OpcRealtimedataService opcRealtimedataService;
 
 
-
-
-    public DataCenter() {
-        influxDB = InfluxDBFactory.connect(URL, USER, PASSWORD);
+    // 解决无法在构造器里读取到@Value数据的问题。
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        influxDB = InfluxDBFactory.connect(influxDBProperties.getUrl(), influxDBProperties.getUser(), influxDBProperties.getPassword());
         influxDB.enableBatch(BatchOptions.DEFAULTS.actions(2000).flushDuration(100));
     }
 
     /**
      * 读取每个客户端的数据
      */
-    public void read() {
+    public void exec() {
         creatConnection();//创建所有服务端的连接
         writeToInfluxDBOrMemoryOrDB();//将读取到的数据写入到内存和influx里面或者数据库里。
     }
@@ -85,45 +91,50 @@ public class DataCenter {
      * 创建所有服务端的连接
      */
     public void creatConnection() {
-        List<OpcPropertiesGroup> listProp = opcPropertiesGroupService.list();
+        try{
+            List<OpcPropertiesGroup> listProp = opcPropertiesGroupService.list();
 
-        listProp.forEach((prop) -> {
-            String hostname = prop.getHostname();
-            String domain = prop.getDomain();
-            String username = prop.getUsername();
-            String password = prop.getPassword();
-            String clsid = prop.getClsid();
-            String progId = prop.getProgId();
+            listProp.forEach((prop) -> {
+                String hostname = prop.getHostname();
+                String domain = prop.getDomain();
+                String username = prop.getUsername();
+                String password = prop.getPassword();
+                String clsid = prop.getClsid();
+                String progId = prop.getProgId();
 
-            final ConnectionInformation connectionInformation = new ConnectionInformation();
-            connectionInformation.setHost(hostname);
-            connectionInformation.setDomain(domain);
-            connectionInformation.setUser(username);
-            connectionInformation.setPassword(password);
-            connectionInformation.setClsid(clsid);
-            connectionInformation.setProgId(progId);
+                final ConnectionInformation connectionInformation = new ConnectionInformation();
+                connectionInformation.setHost(hostname);
+                connectionInformation.setDomain(domain);
+                connectionInformation.setUser(username);
+                connectionInformation.setPassword(password);
+                connectionInformation.setClsid(clsid);
+                connectionInformation.setProgId(progId);
 
-            //建立连接：
-            Server server = new Server(connectionInformation, Executors.newSingleThreadScheduledExecutor());
-            AutoReconnectController controller = new AutoReconnectController(server);//支持断线重连
-            controller.connect();
+                //建立连接：
+                Server server = new Server(connectionInformation, Executors.newSingleThreadScheduledExecutor());
+                AutoReconnectController controller = new AutoReconnectController(server);//支持断线重连
+                controller.connect();
 
-            log.info("********** Async OPC Init!!!! ********** ");
-            log.info("********** hostname ******************** {}", hostname);
-            log.info("********** domain ********************** {}", domain);
-            log.info("********** progId ********************** {}", progId);
-            log.info("********** clsid *********************** {}", clsid);
-            log.info("********** Async OPC State ************* {}", server.getServerState());
+                log.info("********** Async OPC Init!!!! ********** ");
+                log.info("********** hostname ******************** {}", hostname);
+                log.info("********** domain ********************** {}", domain);
+                log.info("********** progId ********************** {}", progId);
+                log.info("********** clsid *********************** {}", clsid);
+                log.info("********** Async OPC State ************* {}", server.getServerState());
 
-            opcServers.put(prop, server);
-        });
-        log.info("<><><><><><><><><><><><> 共建立连接 {} 个<><><><><><><><><><><><> ", listProp.size());
+                opcServers.put(prop, server);
+            });
+            log.info("<><><><><><><><><><><><> 共建立连接 {} 个<><><><><><><><><><><><> ", listProp.size());
+        }catch (Exception e) {
+            log.error("<><><><><><><><><><><><> 创建服务端连接失败 <><><><><><><><><><><><> {1}", e);
+        }
     }
 
     /*
      * 根据服务数据库获取所有的groups
      */
     private void writeToInfluxDBOrMemoryOrDB() {
+
         opcServers.forEach((opcProp, server) -> {
             try {
                 List<Tags> tags = dataGroupsService.getAllTagsByTableName(opcProp.getTableName());
@@ -188,7 +199,7 @@ public class DataCenter {
      */
     private void writeToInfluxDB(Tags tag, ItemState state) {
         hasDBOrCreate();
-        influxDB.write(DATABASE, "autogen", buildPoint(tag, state));
+        influxDB.write(influxDBProperties.getDatabase(), "autogen", buildPoint(tag, state));
     }
 
 
@@ -220,12 +231,12 @@ public class DataCenter {
             List<List<Object>> values = showDatabases.getResults().get(0).getSeries().get(0).getValues();
             values.forEach((objectList) -> {
                 String dbName = String.valueOf(values.get(0).get(0));
-                if (DATABASE.equals(dbName)) {
+                if (influxDBProperties.getDatabase().equals(dbName)) {
                     HASDB.set(true);
                 }
             });
             if (!HASDB.get()) {
-                influxDB.query(new Query("CREATE DATABASE " + DATABASE));
+                influxDB.query(new Query("CREATE DATABASE " + influxDBProperties.getDatabase()));
                 HASDB.set(true);
             }
         }
@@ -312,7 +323,6 @@ public class DataCenter {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return sdf.format(state.getTimestamp().getTime());
     }
-
 
 
 }

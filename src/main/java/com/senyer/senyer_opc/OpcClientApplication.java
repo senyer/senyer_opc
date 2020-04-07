@@ -28,7 +28,7 @@ public class OpcClientApplication implements ApplicationRunner  {
 //默认启动完毕执行一次
   @Override
   public void run(ApplicationArguments args) throws Exception {
-    dataCenter.read();
+    dataCenter.exec();
     //opcAsyncHandler.asyncHandle();
   }
 }

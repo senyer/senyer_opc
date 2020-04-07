@@ -25,4 +25,12 @@ spring:
           url: jdbc:sqlserver://192.168.100.170;DatabaseName=Opc_Config_DB
 
 
+influxdb:
+  url: http://127.0.0.1:8086
+  user: admin
+  password: admin
+  database: Opc_RealTimeDB
+
+
+
 
