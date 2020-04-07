@@ -17,10 +17,15 @@ import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <><><><><> 数据处理中心 <><><><><>
@@ -40,6 +45,7 @@ public class DataCenter {
   private static final String USER = "admin";
   private static final String PASSWORD = "admin";
   private static String DATABASE = "Opc_RealTimeDB";
+  private static AtomicBoolean HASDB = new AtomicBoolean(false);
   private InfluxDB influxDB;
 
   public static final ConcurrentHashMap<OpcPropertiesGroup, ConcurrentHashMap<Tags, ItemState>> memoryData = new ConcurrentHashMap<>();//存储全局变量至内存
@@ -166,13 +172,75 @@ public class DataCenter {
     });*/
   }
 
+  /**
+   * 写入数据到influxdb
+   * @param tag tag
+   * @param state state
+   */
   private void writeToInfluxDB(Tags tag, ItemState state) {
-
     hasDBOrCreate();
     influxDB.enableBatch(BatchOptions.DEFAULTS.actions(2000).flushDuration(100));
+    influxDB.write(DATABASE, "autogen", buildPoint(tag, state));
+
+  }
+
+  /**
+   * 构建Point对象，
+   * 根据value的类型，生成特定的point对象。（对应数据库的一行表记录概念，value字段的类型，influx只支持那么几个）
+   * @param tag tag对象
+   * @param state state对象
+   * @return Point
+   */
+  private Point buildPoint(Tags tag, ItemState state) {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:MM:ss");
+    String dateStr = sdf.format(state.getTimestamp());
+
+    Object value = null;
+    try {
+      value = state.getValue().getObject();
+    } catch (JIException e) {
+      log.error(">>>>>>>>>>>>>>>>>> state.getValue().getObject() failed! {1}", e);
+    }
+
     Point point = null;
-    influxDB.write(DATABASE, "autogen", point);
-    //TODO (senyer) : 写入到influxDB
+    if (value instanceof Boolean) {
+      point = Point
+              .measurement(tag.getAlies())
+              .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+              .addField("value", (boolean) value)
+              .addField("sourceTime", dateStr)
+              .build();
+    } else if (value instanceof Double) {
+      point = Point
+              .measurement(tag.getAlies())
+              .time(System.currentTimeMillis()+28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+              .addField("value", (double)value)
+              .addField("sourceTime", dateStr)
+              .build();
+    } else if (value instanceof Integer) {
+      point = Point
+              .measurement(tag.getAlies())
+              .time(System.currentTimeMillis()+28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+              .addField("value", (int)value)
+              .addField("sourceTime", dateStr)
+              .build();
+    } else if (value instanceof BigDecimal) {
+      point = Point
+              .measurement(tag.getAlies())
+              .time(System.currentTimeMillis()+28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+              .addField("value", String.valueOf(value))
+              .addField("sourceTime", dateStr)
+              .build();
+    }
+    else {
+      point = Point
+              .measurement(tag.getAlies())
+              .time(System.currentTimeMillis()+28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+              .addField("value", String.valueOf( value))
+              .addField("sourceTime", dateStr)
+              .build();
+    }
+    return point;
   }
 
   /**
@@ -187,9 +255,20 @@ public class DataCenter {
   }
 
   private  void hasDBOrCreate() {
-    QueryResult showDatabases = influxDB.query(new Query("show databases"));
-    List<List<Object>> values = showDatabases.getResults().get(0).getSeries().get(0).getValues();
-
+    if (!HASDB.get()) {
+      QueryResult showDatabases = influxDB.query(new Query("show databases"));
+      List<List<Object>> values = showDatabases.getResults().get(0).getSeries().get(0).getValues();
+      values.forEach((objectList) -> {
+        String dbName = String.valueOf(values.get(0).get(0));
+        if (DATABASE.equals(dbName)) {
+          HASDB.set(true);
+        }
+      });
+      if (!HASDB.get()) {
+        influxDB.query(new Query("CREATE DATABASE " + DATABASE));
+        HASDB.set(false);
+      }
+    }
   }
 
 
