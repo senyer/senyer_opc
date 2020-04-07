@@ -2,8 +2,11 @@ package com.senyer.senyer_opc.datacenter;
 
 import com.senyer.senyer_opc.dto.Tags;
 import com.senyer.senyer_opc.persistence.domain.OpcPropertiesGroup;
+import com.senyer.senyer_opc.persistence.domain.OpcRealtimedata;
 import com.senyer.senyer_opc.service.DataGroupsService;
 import com.senyer.senyer_opc.service.OpcPropertiesGroupService;
+import com.senyer.senyer_opc.service.OpcRealtimedataService;
+import com.senyer.senyer_opc.utils.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.influxdb.InfluxDBFactory;
 import org.jinterop.dcom.common.JIException;
@@ -16,12 +19,10 @@ import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
-
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -59,6 +60,11 @@ public class DataCenter {
     private OpcPropertiesGroupService opcPropertiesGroupService;
     @Resource
     private DataGroupsService dataGroupsService;
+    @Resource
+    private OpcRealtimedataService opcRealtimedataService;
+
+
+
 
     public DataCenter() {
         influxDB = InfluxDBFactory.connect(URL, USER, PASSWORD);
@@ -141,7 +147,6 @@ public class DataCenter {
             try {
                 access.addItem(tag.getItemId(), (item, state) -> {
                             if (item != null) {
-                                //TODO 这些操作后续可以考虑异步化处理
                                 writeToMemory(tag, state, opcProp);     //To Memory
                                 writeToInfluxDB(tag, state);            //To InfluxDB
                                 writeToDB(tag, state);                  //To DB
@@ -158,6 +163,8 @@ public class DataCenter {
     /**
      * TODO （senyer） 这里需要考虑一下，是否会造成内存溢出！！！！！
      *
+     * Write To Memory
+     *
      * @param tag   变量名
      * @param state 读取的数据对象。
      */
@@ -170,100 +177,38 @@ public class DataCenter {
         }
         itemMap.put(tag, state);
         memoryData.put(opcProp, itemMap);
-    /*
-    log.error(">>>>>>>>>>>>>>>>>> 遍历：：：");
-    log.error(">>>>>>>>>>>>>>>>>> 遍历XXXXXXX：：："+memoryData.size());
-    memoryData.forEach((k,v)->{
-      log.error("kkkkkkkkkkkkkkkkk:      "+k);
-      log.error("vvvvvvvvvvvvv::::::"+v);
-    });*/
     }
 
     /**
-     * 写入数据到influxdb
+     * Write To InfluxDB
      *
      * @param tag   tag
      * @param state state
      */
     private void writeToInfluxDB(Tags tag, ItemState state) {
         hasDBOrCreate();
-
         influxDB.write(DATABASE, "autogen", buildPoint(tag, state));
     }
 
-    /**
-     * 构建Point对象，
-     * 根据value的类型，生成特定的point对象。（对应数据库的一行表记录概念，value字段的类型，influx只支持那么几个）
-     *
-     * @param tag   tag对象
-     * @param state state对象
-     * @return Point
-     */
-    private Point buildPoint(Tags tag, ItemState state) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String dateStr = sdf.format(state.getTimestamp().getTime());
-
-        Object value = null;
-        try {
-            if (state.getQuality() == 0) {
-                value = "未读取到数据";
-            } else {
-                value = state.getValue().getObject();
-            }
-        } catch (JIException e) {
-            log.error(">>>>>>>>>>>>>>>>>> state.getValue().getObject() failed! {1}", e);
-        }
-        Point point = null;
-        if (value instanceof Boolean) {
-            point = Point
-                    .measurement(tag.getAlies())
-                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
-                    .addField("value", (boolean) value)
-                    .addField("sourceTime", dateStr)
-                    .build();
-        } else if (value instanceof Double) {
-            point = Point
-                    .measurement(tag.getAlies())
-                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
-                    .addField("value", (double) value)
-                    .addField("sourceTime", dateStr)
-                    .build();
-        } else if (value instanceof Integer) {
-            point = Point
-                    .measurement(tag.getAlies())
-                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
-                    .addField("value", (int) value)
-                    .addField("sourceTime", dateStr)
-                    .build();
-        } else if (value instanceof BigDecimal) {
-            point = Point
-                    .measurement(tag.getAlies())
-                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
-                    .addField("value", String.valueOf(value))
-                    .addField("sourceTime", dateStr)
-                    .build();
-        } else {
-            point = Point
-                    .measurement(tag.getAlies())
-                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
-                    .addField("value", String.valueOf(value))
-                    .addField("sourceTime", dateStr)
-                    .build();
-        }
-        return point;
-    }
 
     /**
      * Write To DB
-     *
-     * @param tag
-     * @param state
+     * //TODO 这些操作后续可以考虑异步化处理
+     * @param tag tag
+     * @param state state
      */
     private void writeToDB(Tags tag, ItemState state) {
+        Object value = readValue(state);
+        String timeStamp = readTimeStamp(state);
 
-        //TODO (senyer) : 写入到关系型数据库 saveOrUpdate
-
+        OpcRealtimedata opcRealtimedata = new OpcRealtimedata();
+        opcRealtimedata.setAlias(tag.getAlies());
+        opcRealtimedata.setValue(String.valueOf(value));
+        opcRealtimedata.setTime(DateUtil.stringToDate(timeStamp,DateUtil.DATETIME_NORMAL_FORMAT));
+        opcRealtimedataService.saveOrUpdate(opcRealtimedata);
     }
+
+
 
     /**
      * 判断influxdb数据库是否已经创建，没有创建则create
@@ -284,6 +229,89 @@ public class DataCenter {
             }
         }
     }
+
+    /**
+     * 构建Point对象，
+     * 根据value的类型，生成特定的point对象。（对应数据库的一行表记录概念，value字段的类型，influx只支持那么几个）
+     *
+     * @param tag   tag对象
+     * @param state state对象
+     * @return Point
+     */
+    private Point buildPoint(Tags tag, ItemState state) {
+        String timeStamp = readTimeStamp(state);
+        Object value = readValue(state);
+
+        Point point = null;
+        if (value instanceof Boolean) {
+            point = Point
+                    .measurement(tag.getAlies())
+                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+                    .addField("value", (boolean) value)
+                    .addField("sourceTime", timeStamp)
+                    .build();
+        } else if (value instanceof Double) {
+            point = Point
+                    .measurement(tag.getAlies())
+                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+                    .addField("value", (double) value)
+                    .addField("sourceTime", timeStamp)
+                    .build();
+        } else if (value instanceof Integer) {
+            point = Point
+                    .measurement(tag.getAlies())
+                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+                    .addField("value", (int) value)
+                    .addField("sourceTime", timeStamp)
+                    .build();
+        } else if (value instanceof BigDecimal) {
+            point = Point
+                    .measurement(tag.getAlies())
+                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+                    .addField("value", String.valueOf(value))
+                    .addField("sourceTime", timeStamp)
+                    .build();
+        } else {
+            point = Point
+                    .measurement(tag.getAlies())
+                    .time(System.currentTimeMillis() + 28800000, TimeUnit.MILLISECONDS)//UTC+8个小时等于北京时间
+                    .addField("value", String.valueOf(value))
+                    .addField("sourceTime", timeStamp)
+                    .build();
+        }
+        return point;
+    }
+
+
+    /**
+     * Read Value From ItemState
+     * @param state data object
+     * @return
+     */
+    private Object readValue(ItemState state) {
+        Object value = null;
+        try {
+            if (state.getQuality() == 0) {
+                value = "未读取到数据";
+            } else {
+                value = state.getValue().getObject();
+            }
+        } catch (JIException e) {
+            log.error(">>>>>>>>>>>>>>>>>> state.getValue().getObject() failed! {1}", e);
+        }
+        return value;
+    }
+
+    /**
+     * Read TimeStamp From ItemState
+     * @param state data object
+     * @return
+     */
+    private String readTimeStamp(ItemState state) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(state.getTimestamp().getTime());
+    }
+
 
 
 }

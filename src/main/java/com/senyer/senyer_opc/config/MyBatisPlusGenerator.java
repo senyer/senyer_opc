@@ -59,7 +59,7 @@ public class MyBatisPlusGenerator {
                 //strategy.setSuperEntityClass("com.baomidou.ant.common.BaseEntity");
                 // 写于父类中的公共字段,可以是多个
                 //strategy.setSuperEntityColumns("id");
-                strategy.setInclude(new String[] {"opc_properties_group"});// 需要生成的表
+                strategy.setInclude(new String[] {"Opc_RealTimeData"});// 需要生成的表
                 //strategy.setExclude(new String[] {"sys_version_update"});// 排除生成的表
                 //strategy.setTablePrefix(new String[]{"sys_"});//此处提供多个表的前缀去除  也可以动态获取pc.getModuleName() + "_"
                 mpg.setStrategy(strategy);
