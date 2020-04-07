@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/realtime")
+@RequestMapping("/unknown")
 @Api(tags = "根据表名返回特定格式数据给")
 public class DataController {
 
