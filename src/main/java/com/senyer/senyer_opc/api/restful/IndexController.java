@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.*;
+import static org.influxdb.querybuilder.time.DurationLiteral.MINUTE;
 
 @RestController
 @RequestMapping("/")
@@ -49,13 +50,14 @@ public class IndexController {
 
 
     @GetMapping("/history")
-    @ApiOperation("从influxDB获取历史数据（全部的）")
+    @ApiOperation("从influxDB获取历史数据")
     @ApiImplicitParams ({
         @ApiImplicitParam(value = "需要查询的表名（变量清单）支持多个字段同时查询" ,required = true,name = "measurements" ),
         @ApiImplicitParam(value = "起始时间" ,required = true,name = "beginTime" ),
-        @ApiImplicitParam(value = "截止时间" ,required = true,name = "endTime" )
+        @ApiImplicitParam(value = "截止时间" ,required = true,name = "endTime" ),
+        @ApiImplicitParam(value = "间隔时间（如果为空，则查所有）-分钟级" ,required = false,name = "intervalTime" ,dataType = "Long")
     })
-    public Map<String , Object> fromMemory(String[] measurements, String beginTime, String endTime){
+    public Map<String , Object> fromMemory(String[] measurements, String beginTime, String endTime,Long intervalTime){
         Map<String , Object> results= new HashMap<>();
         Map<String , Object> result= new HashMap<>();
         String beginTimeToUTC = localToUTC(beginTime);
@@ -66,11 +68,19 @@ public class IndexController {
 
                 List<Map<Object,Object>> datas = new ArrayList<>();
                 Map<Object,Object> data = new TreeMap<>();
-                Query query = select().column("value").from(influxDBProperties.getDatabase(),measurements[i])
-                        .where(gte("time",beginTimeToUTC))
-                        .and(lte("time",endTimeToUTC));
+                Query query =null;
+                if (intervalTime!=null) { //TODO （senyer） Fix Value为字符串，似乎就无法进行聚合的问题
+                    query=select().mean("value").from(influxDBProperties.getDatabase(),measurements[i])
+                            .where(gte("time",beginTimeToUTC))
+                            .and(lte("time",endTimeToUTC))
+                            .groupBy(time(intervalTime,MINUTE));
+                } else {
+                    query=select().column("value").from(influxDBProperties.getDatabase(),measurements[i])
+                            .where(gte("time",beginTimeToUTC))
+                            .and(lte("time",endTimeToUTC));
+                }
+
                 QueryResult queryResult = influxDB.query(query);
-                System.out.println(queryResult);
                 List<List<Object>> querys = queryResult.getResults().get(0).getSeries().get(0).getValues();
                 querys.forEach((list)->{
                     data.put(UTCToCST(String.valueOf(list.get(0))),list.get(1)); // time + value
