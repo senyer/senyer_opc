@@ -17,7 +17,7 @@ import lombok.experimental.Accessors;
  * </p>
  *
  * @author senyer
- * @since 2020-03-31
+ * @since 2020-04-07
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -44,6 +44,8 @@ public class OpcPropertiesGroup extends Model<OpcPropertiesGroup> {
     private String clsid;
 
     private String intervalTime;
+
+    private String tableName;
 
 
     @Override

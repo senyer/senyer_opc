@@ -1,7 +1,7 @@
 package com.senyer.senyer_opc;
 
+import com.senyer.senyer_opc.datacenter.DataCenter;
 import com.senyer.senyer_opc.opc.OpcAsyncHandler;
-import com.senyer.senyer_opc.opc.OpcHandler;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -19,17 +19,17 @@ public class OpcClientApplication implements ApplicationRunner  {
     SpringApplication.run(OpcClientApplication.class, args);
   }
 
+  @Resource
+  private DataCenter dataCenter;
 
   @Resource
-  private OpcHandler opcHandler;
-
-  @Resource
-  private OpcAsyncHandler asyncHandler;
+  private OpcAsyncHandler opcAsyncHandler;
 
 //默认启动完毕执行一次
   @Override
   public void run(ApplicationArguments args) throws Exception {
-   // asyncHandler.asyncHandle();
+    dataCenter.read();
+    //opcAsyncHandler.asyncHandle();
   }
 }
 

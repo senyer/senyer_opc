@@ -31,7 +31,7 @@ public class OpcTimer implements InitializingBean {
   /*
     这个任务会开辟一个全局内存。暂时不清楚会不会造成频繁的GC。
    */
-  @Scheduled(cron = "0/10 * * * * *")
+  //@Scheduled(cron = "0/10 * * * * *")
   public void scheduledAsyncOpc(){
     try {
       log.info(">>>>>>>>>>>>>>>>>>>>>>>> Running Async Scheduled OPC ");
@@ -44,7 +44,7 @@ public class OpcTimer implements InitializingBean {
   /*
     这个任务会定时推送数据给websocket
    */
-  @Scheduled(cron = "0/8 * * * * *")
+  //@Scheduled(cron = "0/8 * * * * *")
   public void websocketPush(){
     try {
       for(Map.Entry<String, String> entry : OpcAsyncHandler.requestInfoWS.entrySet()){
@@ -103,7 +103,7 @@ public class OpcTimer implements InitializingBean {
   @Override
   public void afterPropertiesSet() {
     try {
-      opcAsyncHandler.asyncHandle();
+     // opcAsyncHandler.asyncHandle();
     } catch (Exception e) {
       log.error(">>>>>>>>>>>>>>>>>>>>>>>> Init OPC Error : {1}",e);
     }
