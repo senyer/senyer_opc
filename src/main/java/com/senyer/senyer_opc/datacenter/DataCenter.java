@@ -48,7 +48,7 @@ public class DataCenter {
    */
   public void read() {
     creatConnection();//创建所有服务端的连接
-    writeToInfluxDBAndMemory();//将读取到的数据写入到内存和influx里面。
+    writeToInfluxDBOrMemoryOrDB();//将读取到的数据写入到内存和influx里面或者数据库里。
   }
 
 
@@ -94,7 +94,7 @@ public class DataCenter {
   /*
    * 根据服务数据库获取所有的groups
    */
-  private void writeToInfluxDBAndMemory() {
+  private void writeToInfluxDBOrMemoryOrDB() {
     opcServers.forEach((opcProp, server) -> {
       try {
         List<Tags> tags = dataGroupsService.getAllTagsByTableName(opcProp.getTableName());
@@ -146,8 +146,6 @@ public class DataCenter {
       itemMap = memoryData.get(opcProp);
     }
     itemMap.put(tag, state);
-    //TODO (senyer) improve this.  想一个更高效合理的方案。
-    //memoryData.remove(opcProp);//校验一下，这一步是不是可以删掉、
     memoryData.put(opcProp, itemMap);
     /*
     log.error(">>>>>>>>>>>>>>>>>> 遍历：：：");
@@ -159,6 +157,7 @@ public class DataCenter {
   }
 
   private void writeToInfluxDB(Tags tag, ItemState state) {
+
     //TODO (senyer) : 写入到influxDB
   }
 
