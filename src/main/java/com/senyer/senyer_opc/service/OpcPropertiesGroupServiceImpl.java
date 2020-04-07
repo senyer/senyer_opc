@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
  * </p>
  *
  * @author senyer
- * @since 2020-03-31
+ * @since 2020-04-07
  */
 @Service
 public class OpcPropertiesGroupServiceImpl extends ServiceImpl<OpcPropertiesGroupMapper, OpcPropertiesGroup> implements OpcPropertiesGroupService {

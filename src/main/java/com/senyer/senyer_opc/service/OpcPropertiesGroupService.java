@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * </p>
  *
  * @author senyer
- * @since 2020-03-31
+ * @since 2020-04-07
  */
 public interface OpcPropertiesGroupService extends IService<OpcPropertiesGroup> {
 

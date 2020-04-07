@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
  * </p>
  *
  * @author senyer
- * @since 2020-03-31
+ * @since 2020-04-07
  */
 @RestController
 @RequestMapping("/opc-properties-group")
