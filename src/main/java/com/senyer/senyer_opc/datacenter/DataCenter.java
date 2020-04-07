@@ -127,7 +127,7 @@ public class DataCenter implements InitializingBean {
     }
 
     /*
-     * 根据服务数据库获取所有的groups
+     * 遍历所有的服务，实现数据的读取并写入到内存、influxDB和数据库
      */
     private void writeToInfluxDBOrMemoryOrDB() {
 
