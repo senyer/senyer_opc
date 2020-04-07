@@ -1,7 +1,6 @@
 package com.senyer.senyer_opc.datacenter;
 
 import com.senyer.senyer_opc.dto.Tags;
-import com.senyer.senyer_opc.persistence.domain.DataGroups;
 import com.senyer.senyer_opc.persistence.domain.OpcPropertiesGroup;
 import com.senyer.senyer_opc.service.DataGroupsService;
 import com.senyer.senyer_opc.service.OpcPropertiesGroupService;
@@ -11,7 +10,12 @@ import org.openscada.opc.lib.common.ConnectionInformation;
 import org.openscada.opc.lib.common.NotConnectedException;
 import org.openscada.opc.lib.da.*;
 import org.springframework.stereotype.Component;
-
+import org.influxdb.BatchOptions;
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.Point;
+import org.influxdb.dto.Query;
+import org.influxdb.dto.QueryResult;
 import javax.annotation.Resource;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -31,6 +35,12 @@ import java.util.concurrent.Executors;
 @Component
 @Slf4j
 public class DataCenter {
+
+  private static final String URL = "http://127.0.0.1:8086";
+  private static final String USER = "admin";
+  private static final String PASSWORD = "admin";
+  private static String DATABASE = "Opc_RealTimeDB";
+  private InfluxDB influxDB;
 
   public static final ConcurrentHashMap<OpcPropertiesGroup, ConcurrentHashMap<Tags, ItemState>> memoryData = new ConcurrentHashMap<>();//存储全局变量至内存
 
@@ -158,6 +168,10 @@ public class DataCenter {
 
   private void writeToInfluxDB(Tags tag, ItemState state) {
 
+    hasDBOrCreate();
+    influxDB.enableBatch(BatchOptions.DEFAULTS.actions(2000).flushDuration(100));
+    Point point = null;
+    influxDB.write(DATABASE, "autogen", point);
     //TODO (senyer) : 写入到influxDB
   }
 
@@ -167,6 +181,16 @@ public class DataCenter {
    * @param state
    */
   private void writeToDB(Tags tag, ItemState state) {
+
     //TODO (senyer) : 写入到关系型数据库 saveOrUpdate
+
   }
+
+  private  void hasDBOrCreate() {
+    QueryResult showDatabases = influxDB.query(new Query("show databases"));
+    List<List<Object>> values = showDatabases.getResults().get(0).getSeries().get(0).getValues();
+
+  }
+
+
 }
