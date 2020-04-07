@@ -15,7 +15,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Component
 public class SwaggerConfig {
     private static final String WEB_VERSION = "1.0.0";
-		private static final String SWAGGER_SCAN_WEB_PACKAGE = "com.senyer.opc_client.api.restful";
+		private static final String SWAGGER_SCAN_WEB_PACKAGE = "com.senyer.senyer_opc.api.restful";
 
 	@Bean
     public Docket webRestApi() {
