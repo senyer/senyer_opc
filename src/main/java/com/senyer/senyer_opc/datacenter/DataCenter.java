@@ -1,5 +1,6 @@
 package com.senyer.senyer_opc.datacenter;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.senyer.senyer_opc.dto.Tags;
 import com.senyer.senyer_opc.persistence.domain.OpcPropertiesGroup;
 import com.senyer.senyer_opc.persistence.domain.OpcRealtimedata;
@@ -205,7 +206,7 @@ public class DataCenter {
         opcRealtimedata.setAlias(tag.getAlies());
         opcRealtimedata.setValue(String.valueOf(value));
         opcRealtimedata.setTime(DateUtil.stringToDate(timeStamp,DateUtil.DATETIME_NORMAL_FORMAT));
-        opcRealtimedataService.saveOrUpdate(opcRealtimedata);
+        opcRealtimedataService.saveOrUpdate(opcRealtimedata,new UpdateWrapper<OpcRealtimedata>().eq("alias",tag.getAlies()));
     }
 
 
