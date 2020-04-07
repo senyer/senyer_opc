@@ -47,19 +47,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class DataCenter implements InitializingBean {
 
-
-
-
-
-    private static AtomicBoolean HASDB = new AtomicBoolean(false);
-
     private InfluxDB influxDB;
-
-    public static final ConcurrentHashMap<OpcPropertiesGroup, ConcurrentHashMap<Tags, ItemState>> memoryData = new ConcurrentHashMap<>();//存储全局变量至内存
-
-    public static final ConcurrentHashMap<OpcPropertiesGroup, Server> opcServers = new ConcurrentHashMap<>();//存储所有创建连接的opc服务端。
-
-    private static final Integer INTERVAL_TIME = 8000;//循环读取的间隔时间。
+    //Check if a DB has been created in influxDB.
+    private static AtomicBoolean HASDB = new AtomicBoolean(false);
+    //存储全局变量至内存
+    public static final ConcurrentHashMap<OpcPropertiesGroup, ConcurrentHashMap<Tags, ItemState>> memoryData = new ConcurrentHashMap<>();
+    //存储所有创建连接的opc服务端。
+    public static final ConcurrentHashMap<OpcPropertiesGroup, Server> opcServers = new ConcurrentHashMap<>();
+    //循环读取的间隔时间,8s。
+    private static final Integer INTERVAL_TIME = 8000;
 
     @Autowired
     private InfluxDBProperties influxDBProperties;
@@ -139,7 +135,7 @@ public class DataCenter implements InitializingBean {
             try {
                 List<Tags> tags = dataGroupsService.getAllTagsByTableName(opcProp.getTableName());
                 final AccessBase access = new SyncAccess(server, INTERVAL_TIME);
-                accessReadOneserver(opcProp, tags, access);
+                execOneserver(opcProp, tags, access);
                 access.bind();
             } catch (final JIException | UnknownHostException | NotConnectedException | DuplicateGroupException e) {
                 log.error(">>>>>>>>>>>>>>>>>> asyncHandle failed! {1}", e);
@@ -154,7 +150,7 @@ public class DataCenter implements InitializingBean {
       accessReadOneserver只会触发一次，
       但是access.addItem(ItemId,(item,state)->{})这个方法会根据INTERVAL_TIME，定时触发！
      */
-    private void accessReadOneserver(OpcPropertiesGroup opcProp, List<Tags> tags, AccessBase access) {
+    private void execOneserver(OpcPropertiesGroup opcProp, List<Tags> tags, AccessBase access) {
         tags.forEach((tag -> {
             try {
                 access.addItem(tag.getItemId(), (item, state) -> {
@@ -181,14 +177,19 @@ public class DataCenter implements InitializingBean {
      * @param state 读取的数据对象。
      */
     private void writeToMemory(Tags tag, ItemState state, OpcPropertiesGroup opcProp) {
-        final ConcurrentHashMap<Tags, ItemState> itemMap;
-        if (memoryData.get(opcProp) == null) {
-            itemMap = new ConcurrentHashMap<>();
-        } else {
-            itemMap = memoryData.get(opcProp);
+        try {
+            final ConcurrentHashMap<Tags, ItemState> itemMap;
+            if (memoryData.get(opcProp) == null) {
+                itemMap = new ConcurrentHashMap<>();
+            } else {
+                itemMap = memoryData.get(opcProp);
+            }
+            itemMap.put(tag, state);
+            memoryData.put(opcProp, itemMap);
+        } catch(Exception e) {
+            log.error("<><><><><><><><><><><><> Write To Memory Failed <><><><><><><><><><><><> {1}", e);
         }
-        itemMap.put(tag, state);
-        memoryData.put(opcProp, itemMap);
+
     }
 
     /**
@@ -198,8 +199,13 @@ public class DataCenter implements InitializingBean {
      * @param state state
      */
     private void writeToInfluxDB(Tags tag, ItemState state) {
-        hasDBOrCreate();
-        influxDB.write(influxDBProperties.getDatabase(), "autogen", buildPoint(tag, state));
+        try {
+            hasDBOrCreate();
+            influxDB.write(influxDBProperties.getDatabase(), "autogen", buildPoint(tag, state));
+        } catch(Exception e) {
+            log.error("<><><><><><><><><><><><> Write To InfluxDB Failed <><><><><><><><><><><><> {1}", e);
+        }
+
     }
 
 
@@ -210,14 +216,19 @@ public class DataCenter implements InitializingBean {
      * @param state state
      */
     private void writeToDB(Tags tag, ItemState state) {
-        Object value = readValue(state);
-        String timeStamp = readTimeStamp(state);
+        try {
+            Object value = readValue(state);
+            String timeStamp = readTimeStamp(state);
 
-        OpcRealtimedata opcRealtimedata = new OpcRealtimedata();
-        opcRealtimedata.setAlias(tag.getAlies());
-        opcRealtimedata.setValue(String.valueOf(value));
-        opcRealtimedata.setTime(DateUtil.stringToDate(timeStamp,DateUtil.DATETIME_NORMAL_FORMAT));
-        opcRealtimedataService.saveOrUpdate(opcRealtimedata,new UpdateWrapper<OpcRealtimedata>().eq("alias",tag.getAlies()));
+            OpcRealtimedata opcRealtimedata = new OpcRealtimedata();
+            opcRealtimedata.setAlias(tag.getAlies());
+            opcRealtimedata.setValue(String.valueOf(value));
+            opcRealtimedata.setTime(DateUtil.stringToDate(timeStamp,DateUtil.DATETIME_NORMAL_FORMAT));
+            opcRealtimedataService.saveOrUpdate(opcRealtimedata,new UpdateWrapper<OpcRealtimedata>().eq("alias",tag.getAlies()));
+        } catch(Exception e) {
+            log.error("<><><><><><><><><><><><> Write To DB Failed <><><><><><><><><><><><> {1}", e);
+        }
+
     }
 
 

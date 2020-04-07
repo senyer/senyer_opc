@@ -1,8 +1,5 @@
 package com.senyer.senyer_opc.opc;
 
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpUtil;
-import cn.hutool.http.webservice.SoapClient;
 import com.senyer.senyer_opc.dto.Data_A;
 import com.senyer.senyer_opc.dto.Tags;
 import com.senyer.senyer_opc.enums.OpcProp;
@@ -12,7 +9,6 @@ import com.senyer.senyer_opc.service.DataGroupsService;
 import com.senyer.senyer_opc.service.OpcPropertiesService;
 import com.senyer.senyer_opc.utils.FastJsonUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.jinterop.dcom.common.JIException;
 import org.openscada.opc.lib.common.ConnectionInformation;
 import org.openscada.opc.lib.da.*;
@@ -23,10 +19,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
-
 import static com.senyer.senyer_opc.enums.ApiType.*;
 import static com.senyer.senyer_opc.enums.DataStyle.*;
 
+
+/**
+ *     ¥¥¥¥¥¥¥¥封印¥¥¥¥¥¥¥¥
+ * ¥¥¥¥¥¥¥¥¥用DataCenter¥¥¥¥¥¥¥¥¥
+ */
 @Component
 @Slf4j
 public class OpcHandler {

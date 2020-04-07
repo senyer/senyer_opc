@@ -27,6 +27,10 @@ import static com.senyer.senyer_opc.enums.ApiType.WEBSERVICE;
 import static com.senyer.senyer_opc.enums.DataStyle.*;
 import static com.senyer.senyer_opc.enums.DataStyle.STYLE_D;
 
+/**
+ *     ¥¥¥¥¥¥¥¥封印¥¥¥¥¥¥¥¥
+ * ¥¥¥¥¥¥¥¥¥用DataCenter¥¥¥¥¥¥¥¥¥
+ */
 @Component
 @Slf4j
 public class OpcAsyncHandler {

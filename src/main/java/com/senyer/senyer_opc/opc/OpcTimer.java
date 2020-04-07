@@ -17,6 +17,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.senyer.senyer_opc.enums.DataStyle.*;
 import static com.senyer.senyer_opc.enums.DataStyle.STYLE_F;
 
+/**
+ *     ¥¥¥¥¥¥¥¥封印¥¥¥¥¥¥¥¥
+ * ¥¥¥¥¥¥¥¥¥用DataCenter¥¥¥¥¥¥¥¥¥
+ */
 @Component
 @Slf4j
 @Lazy(false)
