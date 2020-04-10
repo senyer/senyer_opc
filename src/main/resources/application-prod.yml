@@ -20,12 +20,12 @@ spring:
       datasource:
         master:
           username: sa
-          password: cJ3fsxzfyj
+          password: Zy@63120760
           driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
-          url: jdbc:sqlserver://192.168.137.23;DatabaseName=Opc_Config_DB
+          url: jdbc:sqlserver://127.0.0.1;DatabaseName=Opc_Config_DB
 
 influxdb:
-  url: http://192.168.137.27:8086
+  url: http://127.0.0.1:8086
   user: admin
   password: admin
   database: Opc_RealTimeDB
