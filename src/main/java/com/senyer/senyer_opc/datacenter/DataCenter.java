@@ -154,6 +154,10 @@ public class DataCenter implements InitializingBean {
         tags.forEach((tag -> {
             try {
                 access.addItem(tag.getItemId(), (item, state) -> {
+                    log.info(">>>>>>>>>>>>>>>>>> opcProp : {}", opcProp);
+                    log.info(">>>>>>>>>>>>>>>>>> tag : {}", tag);
+                    log.info(">>>>>>>>>>>>>>>>>> state : {}", state);
+                    log.info(">>>>>>>>>>>>>>>>>> item : {}", item);
                             if (item != null) {
                                 writeToMemory(tag, state, opcProp);     //To Memory
                                 writeToInfluxDB(tag, state);            //To InfluxDB
