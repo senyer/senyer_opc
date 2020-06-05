@@ -12,7 +12,7 @@ A opc client framework based on Utgard
 6. 支持websocket持续推送
 
 # DataGroups参数说明
-略...
+略....
 
 
 
